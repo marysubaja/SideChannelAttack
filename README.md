@@ -74,3 +74,31 @@ The implementation demonstrates how side-channel leakage can bypass the mathemat
     * **Masking:** Adding random noise to the data so the Hamming Weight is no longer predictable.
     * **Hiding:** Inserting "dummy" cycles or random delays to jitter the traces in time.
 * **Targeting Other Layers:** Extending the attack to the `MixColumns` or `AddRoundKey` layers for different AES implementations.
+
+## 9. Results
+<img width="1000" height="400" alt="image" src="https://github.com/user-attachments/assets/dd221867-0d3f-4cd7-8490-be4601e08770" />
+
+This figure is the visual output of the **Correlation Power Analysis (CPA)** step within the DPA algorithm. It shows how well your mathematical "guesses" about the key match the physical reality of the power consumption.
+
+ The X and Y Axes
+* **X-axis (Time Samples):** Represents the specific moments in time during the AES operation. Since you used `num_test_samples = 100`, the plot spans from 0 to 100.
+* **Y-axis (Correlation):** Represents the statistical correlation between your Hamming Weight hypothesis and the power trace. A higher absolute value (positive or negative) indicates a stronger match.
+
+ The Gray "Noise" Lines
+The gray background is a "spaghetti plot" representing the correlation traces for all **incorrect key guesses**. 
+* Because there are 256 possible values for a single byte, the code calculates 256 correlation lines. 
+* For the 255 wrong keys, the power consumption hypothesis is essentially random compared to the actual data, so their correlation stays low and oscillates randomly around zero.
+
+ The Red Line 
+The red line represents the **Correct Key Guess** (in this case, `0xeb`). 
+* **The Spike:** Notice the sharp downward spike around **Sample 24**. This is the most critical part of the graph.
+* At this specific point in time, the hardware was likely processing the S-Box operation. Because your hypothesis for `0xeb` matches what the hardware actually did, the correlation "spikes" significantly above the background noise.
+
+Why is the spike negative?
+In power analysis, a negative spike is just as valid as a positive one. Correlation can range from $-1$ to $+1$. A strong negative correlation simply means that as your predicted Hamming Weight increases, the measured power decreases (or vice-versa), often due to how the physical measurement probe is oriented or how the specific CMOS logic transitions.
+
+Summary of Results
+In your specific run:
+* **The Algorithm's Logic:** The code looked at all 256 lines, found that the line for `0xeb` reached the highest absolute magnitude (approx. **-130** in this scaled result), and concluded that `0xeb` is the secret key byte.
+* **Success Metric:** If the red line were buried deep inside the gray mass, the attack would have failed (likely requiring more traces to reduce the noise). Since the red spike is clearly visible, the attack was successful.
+
