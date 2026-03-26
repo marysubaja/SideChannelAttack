@@ -1,0 +1,52 @@
+This documentation provides a technical breakdown of the Differential Power Analysis (DPA) attack and its corresponding Boolean Masking countermeasure, as implemented and visualized in the provided Python examples.
+________________________________________
+1. Introduction to Side-Channel Analysis
+Differential Power Analysis (DPA) is a cryptographic attack that does not target the mathematical weaknesses of an algorithm (like AES) but rather its physical implementation. Every time a CPU or hardware security module (HSM) performs a calculation, it consumes a minute amount of power. Because this power consumption varies depending on the data being processed (the Hamming Weight of the data), an attacker can use statistical methods to "leak" the secret key.
+________________________________________
+2. The Attack Mechanism: Correlation Power Analysis (CPA)
+The code utilizes Correlation Power Analysis (CPA), a more advanced form of DPA that uses the Pearson Correlation Coefficient.
+Step 1: Data Collection
+The attacker records $N$ power traces ($T$) while the device encrypts or decrypts $N$ known ciphertexts ($C$).
+•	Trace: A vector of power measurements over time.
+•	Ciphertext: The known output of the encryption process.
+Step 2: The Power Model (Hamming Weight)
+The algorithm assumes the power consumption $P$ is proportional to the number of set bits (1s) in the intermediate value.
+$$P \propto \text{HW}(\text{Intermediate Value})$$
+Step 3: Hypothesis Generation
+For every possible key byte (0 to 255), the attacker calculates what the intermediate state would be at the S-Box layer:
+$$V_{i,k} = \text{SBox}(C_i \oplus K_{guess})$$
+The attacker then builds a Hypothesis Matrix of the expected Hamming Weights for all traces and all 256 key guesses.
+Step 4: Statistical Correlation
+The attacker correlates the Hypothesis Matrix against the Actual Power Traces.
+•	If a key guess is wrong, the correlation will be near zero (random noise).
+•	If a key guess is correct, a significant spike appears at the exact moment that calculation occurred in hardware.
+________________________________________
+3. The Countermeasure: Boolean Masking
+To prevent the attack described above, the implementation must break the link between the secret data and the power consumption.
+The Concept
+Instead of processing the secret value $X$, the hardware processes a masked value $X_m$:
+$$X_m = X \oplus M$$
+Where $M$ is a randomly generated mask that changes for every single encryption cycle.
+Why it Works
+When the attacker tries to correlate their hypothesis $HW(X)$ against the power traces, they fail because the actual power being consumed is $HW(X \oplus M)$. Since $M$ is random and unknown to the attacker, the correlation between $HW(X)$ and the actual leakage becomes zero.
+________________________________________
+4. Implementation Analysis
+The provided Python implementation demonstrates these two states:
+Unprotected implementation
+In this state, the leakage is simulated by adding the Hamming Weight of the actual S-Box output directly into the trace.
+•	Result: The get_dpa_correlation function identifies a clear, statistically significant spike for the correct key.
+Masked Implementation
+In this state, a new np.random.randint(0, 256) is generated for every trace and XORed with the data before the Hamming Weight is added to the trace.
+•	Result: The correlation traces for all 256 keys look like identical random noise. The correct key is indistinguishable from the 255 incorrect guesses.
+________________________________________
+5. Summary of Effectiveness
+Metric	Unprotected (Attackable)	Masked (Protected)
+Data Visibility	Secret key bits correlate to power.	Secret key bits are "hidden" by noise.
+Traces Required	Low (usually 100–1,000).	Extremely High (requires Higher-Order DPA).
+Hardware Overhead	Minimal.	Higher (requires random number generators).
+Primary Threat	Standard CPA.	Second-Order/Template Attacks.
+________________________________________
+6. Future Research and Extensions
+•	Second-Order DPA: If an attacker can find two points in time (one where the mask is generated and one where the masked data is used), they can mathematically combine them to remove the mask.
+•	Shuffling: Randomizing the order of the 16 AES bytes to desynchronize the "spikes" in time.
+•	Machine Learning SCA: Using deep learning to identify patterns in masked traces that standard Pearson correlation cannot detect.
