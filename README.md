@@ -77,6 +77,7 @@ The implementation demonstrates how side-channel leakage can bypass the mathemat
 
 ## 9. Results
 <img width="1000" height="400" alt="image" src="https://github.com/user-attachments/assets/dd221867-0d3f-4cd7-8490-be4601e08770" />
+<img width="1000" height="400" alt="image (15)" src="https://github.com/user-attachments/assets/ec405d24-0af4-461f-9c3c-d365a0a42c5e" />
 
 This figure is the visual output of the **Correlation Power Analysis (CPA)** step within the DPA algorithm. It shows how well your mathematical "guesses" about the key match the physical reality of the power consumption.
 
