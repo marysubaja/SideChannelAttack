@@ -103,3 +103,29 @@ In your specific run:
 * **The Algorithm's Logic:** The code looked at all 256 lines, found that the line for `0xeb` reached the highest absolute magnitude (approx. **-130** in this scaled result), and concluded that `0xeb` is the secret key byte.
 * **Success Metric:** If the red line were buried deep inside the gray mass, the attack would have failed (likely requiring more traces to reduce the noise). Since the red spike is clearly visible, the attack was successful.
 
+**How to Prevent an Attack Like This**
+To stop the algorithm you provided from working, engineers use several "shielding" techniques:
+________________________________________
+1. Masking (The "Math Cloak")
+This is the most common defense. Instead of processing the real data ($X$), the chip generates a random number ($M$) and processes $(X \oplus M)$.
+•	Why it works: The power consumption now correlates to a random value rather than the secret key. The "spikes" in your graph would disappear into the gray noise.
+2. Hiding (The "Noise Generator")
+The chip can be designed to use a constant amount of power regardless of whether it is processing a 0 or a 1.
+•	Current Flattening: Using special hardware (like Dual-Rail Logic) so that every operation consumes exactly the same amount of electricity.
+•	Noise Insertion: Adding a random noise generator to the chip to "drown out" the real signal, making it much harder for the correlation math to find a spike.
+3. Shuffling and Jitter (The "Timing Shell Game")
+The algorithm you have relies on the spike happening at a specific time (like Sample 24 in your image).
+•	Shuffling: The chip performs the 16 bytes of AES in a different, random order every time.
+•	Dummy Operations: The chip performs "fake" math at random intervals.
+•	Result: The "spike" moves around constantly, so when the attacker tries to average the traces, the spikes cancel each other out.
+________________________________________
+4. Protocol Level Limits
+Some systems prevent DPA by simply limiting the number of tries.
+•	Since DPA requires hundreds or thousands of power traces to "see" through the noise, a smart card might lock itself forever if it detects the same key being used too many times in a suspicious manner.
+Summary Table
+Feature	This Code (The Attack)	The Prevention (The Defense)
+Goal	Extract the secret key.	Keep the key hidden.
+Method	Correlates power to data.	Breaks the link between power and data.
+Visibility	Looks for "spikes" in a graph.	Tries to make the graph look like flat noise.
+
+
